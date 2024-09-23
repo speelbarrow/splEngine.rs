@@ -1,0 +1,19 @@
+[package]
+name = "engine"
+version = "0.1.0"
+edition = "2021"
+authors = ["Noah Friedman <speelbarrow@speely.net>"]
+
+[features]
+default = ["full"]
+full = ["ssh", "tcp"]
+ssh = ["dep:openssh"]
+tcp = ["tokio/net", "tokio/macros"]
+
+[dependencies]
+openssh = { version = "0.11.2", optional = true, default-features = false, features = ["native-mux"] }
+tokio = { version = "1.40.0", features = ["io-util", "io-std", "time", "sync"] }
+trait-variant = "0.1.2"
+
+[dev-dependencies]
+tokio = { version = "1.40.0", features = ["rt-multi-thread"] }
