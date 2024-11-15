@@ -82,7 +82,9 @@ pub trait Engine: AsyncReadExt + AsyncWriteExt + Unpin + Sized {
 
             let chunk = self.read_last_chunk().await?;
             for string in chunk.split("\n") {
-                sender.send(string.to_owned()).unwrap();
+                if !sender.is_closed() {
+                    sender.send(string.to_owned()).unwrap();
+                }
             }
             stdout.write_all(chunk.as_bytes()).await?;
             Ok(())
@@ -110,8 +112,10 @@ async fn write(
     sender: Option<&UnboundedSender<String>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     if let Some(sender) = sender {
-        for part in chunk.split("\n") {
-            sender.send(part.to_owned())?;
+        if !sender.is_closed() {
+            for part in chunk.split("\n") {
+                sender.send(part.to_owned())?;
+            }
         }
     }
     Ok(stdout().write_all(chunk.as_bytes()).await?)
@@ -129,10 +133,9 @@ use engine::{connect, ssh::{Session, KnownHosts}};
 #[allow(unused)]
 let session = Session::connect_mux("remote.host.org", KnownHosts::Strict).await.unwrap();
 // Remove the comment on this line ...
-let mut handle = // connect!(@ssh session, "/path/to/executable")
-    connect!(@tcp "www.example.com:65535") // ... and comment out this line to "switch modes".
-    .await
-    .unwrap();
+let mut handle = // connect!(@ssh session, "/path/to/executable").await.unwrap();
+    connect!(@tcp "www.example.com:65535").await.unwrap(); // ... and comment out this line ...
+                                                           // to "switch modes".
 # }
 ```
 */
